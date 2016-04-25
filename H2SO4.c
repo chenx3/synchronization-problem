@@ -21,6 +21,8 @@ sem_t* oxy_sem;
 sem_t* hydro_leave_sem;
 sem_t* hydro_full_sem;
 sem_t* oxy_leave_sem;
+sem_t* produce_sem;
+sem_t* oxy_full_sem;
 
 void openSems() {
   // create all the semaphores
@@ -44,6 +46,16 @@ void openSems() {
   while (checkSem(oxy_leave_sem, "oxyleavesem") == -1) {
      oxy_leave_sem = sem_open("oxyleavesem", O_CREAT|O_EXCL, 0466, 0);
   }
+
+  oxy_full_sem = sem_open("oxyfullsem", O_CREAT|O_EXCL, 0466, 0);
+  while (checkSem(oxy_full_sem, "oxyfullsem") == -1) {
+     oxy_full_sem = sem_open("oxyfullsem", O_CREAT|O_EXCL, 0466, 0);
+  }
+
+  produce_sem = sem_open("producesem", O_CREAT|O_EXCL, 0466, 1);
+  while (checkSem(produce_sem, "producesem") == -1) {
+     produce_sem = sem_open("produce_sem", O_CREAT|O_EXCL, 0466, 1);
+  }
  
 }
 
@@ -59,6 +71,10 @@ void closeSems(){
   sem_unlink("hydrofullsem");
   sem_close(oxy_leave_sem);
   sem_unlink("oxyleavesem");
+  sem_close(produce_sem);
+  sem_unlink("producesem");
+  sem_close(oxy_full_sem);
+  sem_unlink("oxyfullsem");
 }
 
 void* sulfur(void* args) {
@@ -86,7 +102,8 @@ void* sulfur(void* args) {
   sem_wait(oxy_sem);
   //printf("get 4 oxy\n");
   //fflush(stdout);
-  
+
+  sem_wait(produce_sem);
   // produce H2SO4
   printf("produce H2SO4\n");
   fflush(stdout);
@@ -108,7 +125,12 @@ void* sulfur(void* args) {
   sem_post(oxy_leave_sem);
   sem_post(oxy_leave_sem);
   sem_post(oxy_leave_sem);
+  sem_wait(oxy_full_sem);
+  sem_wait(oxy_full_sem);
+  sem_wait(oxy_full_sem);
+  sem_wait(oxy_full_sem);
   
+  sem_post(produce_sem);
   return (void*) 0;
 }
 
@@ -125,7 +147,7 @@ void* oxygen(void* args) {
   sem_wait(oxy_leave_sem);
   printf("oxygen leaving\n");
   fflush(stdout);
-
+  sem_post(oxy_full_sem);
   return (void*) 0;
 }
 

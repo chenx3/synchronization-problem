@@ -210,7 +210,7 @@ void* child(void* args){
     }else{
       // the child is in Molakai
       if (adult_on_Molokai + child_on_Molokai == total_people){
-        printf("exiting\n");
+        printf("child exiting\n");
         sem_post(leave_sem);
         pthread_mutex_unlock(&lock_mutex);
         pthread_exit(0);
@@ -218,6 +218,12 @@ void* child(void* args){
       // if the boat is not in oahu, full, or only one child and multiple adults on Oahu, wait
       while (boat_location == 0 || boat == 1 ){
         pthread_cond_wait(&wait_on_M, &lock_mutex);
+      }
+      if (adult_on_Molokai + child_on_Molokai == total_people){
+        printf("child exiting\n");
+        sem_post(leave_sem);
+        pthread_mutex_unlock(&lock_mutex);
+        pthread_exit(0);
       }
       // rowing the boat to Molakai
       printf("Child getting the boat on Molokai\n");
@@ -274,23 +280,20 @@ void* adult(void* args){
       // wake up all people waiting on Molokai
       pthread_cond_broadcast(&wait_on_M);
 
-      // check if all the people are in Molokai, exit if true
+    // wait on Molokai if the adult is on Molokai
+    }else{
+      // if all the people are in Molokai, exit
       if (adult_on_Molokai + child_on_Molokai == total_people){
-        sem_post(leave_sem);
         pthread_mutex_unlock(&lock_mutex);
+        printf("adult exiting\n");
         pthread_exit(0);
       }
-
-      //wait on Molokai
-      pthread_cond_wait(&wait_on_M, &lock_mutex);
-
-      // wait on Molokai if the adult is on Molokai
-    }else{
       pthread_cond_wait(&wait_on_M, &lock_mutex);
     }
     // if all the people are in Molokai, exit
     if (adult_on_Molokai + child_on_Molokai == total_people){
       pthread_mutex_unlock(&lock_mutex);
+      printf("adult exiting\n");
       pthread_exit(0);
     }
     pthread_mutex_unlock(&lock_mutex);

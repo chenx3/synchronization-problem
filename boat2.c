@@ -210,7 +210,6 @@ void* child(void* args){
     }else{
       // the child is in Molakai
       if (adult_on_Molokai + child_on_Molokai == total_people){
-        printf("child exiting\n");
         sem_post(leave_sem);
         pthread_mutex_unlock(&lock_mutex);
         pthread_exit(0);
@@ -220,7 +219,6 @@ void* child(void* args){
         pthread_cond_wait(&wait_on_M, &lock_mutex);
       }
       if (adult_on_Molokai + child_on_Molokai == total_people){
-        printf("child exiting\n");
         sem_post(leave_sem);
         pthread_mutex_unlock(&lock_mutex);
         pthread_exit(0);
@@ -285,7 +283,6 @@ void* adult(void* args){
       // if all the people are in Molokai, exit
       if (adult_on_Molokai + child_on_Molokai == total_people){
         pthread_mutex_unlock(&lock_mutex);
-        printf("adult exiting\n");
         pthread_exit(0);
       }
       pthread_cond_wait(&wait_on_M, &lock_mutex);
@@ -293,7 +290,6 @@ void* adult(void* args){
     // if all the people are in Molokai, exit
     if (adult_on_Molokai + child_on_Molokai == total_people){
       pthread_mutex_unlock(&lock_mutex);
-      printf("adult exiting\n");
       pthread_exit(0);
     }
     pthread_mutex_unlock(&lock_mutex);

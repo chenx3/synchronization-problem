@@ -179,7 +179,7 @@ void* child(void* args){
         // if more than one child on Oahu
       }else{
         // child getting into the boat
-        printf("Child getting into the boat\n");
+        printf("Child getting into the boat on Oahu\n");
         fflush(stdout);
         boat = boat + 1;
         // if there is two children on the boat, row to Molokai

@@ -15,12 +15,13 @@ int child_on_Molokai = 0;
 int adult_on_Oahu = 0;
 int adult_on_Molokai = 0;
 int total_people = 0;
-
+int arrive = 0;
 // define all the condition variables and semiphores
 pthread_mutex_t lock_mutex;
 pthread_cond_t wait_on_O;
 pthread_cond_t wait_on_M;
 pthread_cond_t boat_full;
+pthread_cond_t boat_arrive;
 sem_t* arrive_sem;
 sem_t* ready_sem;
 sem_t* leave_sem;
@@ -79,8 +80,6 @@ int main(int argc, char* argv[]){
   for (i=0;i<total;i++){
     sem_post(ready_sem);
   }
-  printf("Everyone ready to go\n");
-  fflush(stdout);
 
   // wait for all people have arrived on Molokai before exiting
   sem_wait(leave_sem);
@@ -114,6 +113,7 @@ void* initSynch(){
   pthread_cond_init (&wait_on_O, NULL);
   pthread_cond_init (&wait_on_M, NULL);
   pthread_cond_init (&boat_full, NULL);
+  pthread_cond_init (&boat_arrive, NULL);
   return (void*) 0;
 }
 
@@ -129,6 +129,7 @@ void* closeSynch(){
   pthread_cond_destroy(&wait_on_O);
   pthread_cond_destroy(&wait_on_M);
   pthread_cond_destroy(&boat_full);
+  pthread_cond_destroy(&boat_arrive);
   return (void*) 0;
 }
 
@@ -188,14 +189,11 @@ void* child(void* args){
           // rowing to Malakai
           printf("Child rowing the boat from Oahu to Malakai\n");
           fflush(stdout);
-          printf("Child riding the boat from Oahu to Malakai\n");
-          fflush(stdout);
           // set the child's location and the boat's location
           location = 1;
           boat_location = 1;
           child_on_Molokai = child_on_Molokai + 2;
           child_on_Oahu = child_on_Oahu - 2;
-          printf("Child getting off the boat in Malakai\n");
           printf("Child getting off the boat in Malakai\n");
           fflush(stdout);
           boat = boat - 2;
@@ -204,6 +202,10 @@ void* child(void* args){
         }else{
           // waiting for a second passenger
           pthread_cond_wait(&boat_full,&lock_mutex);
+          printf("Child riding the boat from Oahu to Malakai\n");
+          fflush(stdout);
+          printf("Child getting off the boat in Malakai\n");
+          fflush(stdout);
           location = 1;
         }
       }

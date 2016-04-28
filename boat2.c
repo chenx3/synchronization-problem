@@ -16,12 +16,14 @@ int adult_on_Oahu = 0;
 int adult_on_Molokai = 0;
 int total_people = 0;
 int arrive = 0;
+int off = 0;
 // define all the condition variables and semiphores
 pthread_mutex_t lock_mutex;
 pthread_cond_t wait_on_O;
 pthread_cond_t wait_on_M;
 pthread_cond_t boat_full;
 pthread_cond_t boat_arrive;
+pthread_cond_t boat_off;
 sem_t* arrive_sem;
 sem_t* ready_sem;
 sem_t* leave_sem;
@@ -114,6 +116,7 @@ void* initSynch(){
   pthread_cond_init (&wait_on_M, NULL);
   pthread_cond_init (&boat_full, NULL);
   pthread_cond_init (&boat_arrive, NULL);
+  pthread_cond_init (&boat_off, NULL);
   return (void*) 0;
 }
 
@@ -130,6 +133,7 @@ void* closeSynch(){
   pthread_cond_destroy(&wait_on_M);
   pthread_cond_destroy(&boat_full);
   pthread_cond_destroy(&boat_arrive);
+  pthread_cond_destroy(&boat_off);
   return (void*) 0;
 }
 
@@ -178,6 +182,8 @@ void* child(void* args){
         fflush(stdout);
         // if more than one child on Oahu
       }else{
+        off = 0;
+        arrive = 0;
         // child getting into the boat
         printf("Child getting into the boat on Oahu\n");
         fflush(stdout);
@@ -194,8 +200,24 @@ void* child(void* args){
           boat_location = 1;
           child_on_Molokai = child_on_Molokai + 2;
           child_on_Oahu = child_on_Oahu - 2;
+          
+          // wait until the second child arrive
+          arrive = arrive + 1;
+          pthread_cond_signal(&boat_arrive);
+          while(arrive != 2){
+            pthread_cond_wait(&boat_arrive,&lock_mutex);
+          }
+          
           printf("Child getting off the boat in Malakai\n");
           fflush(stdout);
+          
+          // wait until the second child get off
+          off = off + 1;
+          pthread_cond_signal(&boat_off);
+          while(off != 2){
+            pthread_cond_wait(&boat_off,&lock_mutex);
+          }
+          
           boat = boat - 2;
           // wait up all people waiting on Molokai
           pthread_cond_broadcast(&wait_on_M);
@@ -204,8 +226,21 @@ void* child(void* args){
           pthread_cond_wait(&boat_full,&lock_mutex);
           printf("Child riding the boat from Oahu to Malakai\n");
           fflush(stdout);
+          // wait until the second child arrive 
+          arrive = arrive + 1;
+          pthread_cond_signal(&boat_arrive);
+          while(arrive != 2){
+            pthread_cond_wait(&boat_arrive,&lock_mutex);
+          }
+          boat_location = 1;
           printf("Child getting off the boat in Malakai\n");
           fflush(stdout);
+          // wait until the second child get off 
+          off = off + 1;
+          pthread_cond_signal(&boat_off);
+          while(off != 2){
+            pthread_cond_wait(&boat_off,&lock_mutex);
+          }
           location = 1;
         }
       }
